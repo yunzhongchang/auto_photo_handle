@@ -6,7 +6,10 @@
   - 静图：自定义宽度，高度等比例，自定义最大文件大小
   - GIF动图：自定义宽度，高度等比例，自定义最大文件大小
   - 满足条件直接复制原图至输出目录
+<<<<<<< HEAD
   - GIF 可选：宽度和体积都已达标时跳过压缩，直接复制；取消勾选则全部压缩
+=======
+>>>>>>> 7477a2a1d8688304bf78a855bc24290cbb8dd0bf
   - 输出格式偏好：自动(智能保留) / 全部JPEG / 全部WebP / 全部PNG
   - 质量优先 + 稳定性修复（停止可控 / 句柄管理 / 线程安全 / 体积兜底）
 依赖：pip install Pillow imageio-ffmpeg
@@ -15,7 +18,10 @@
 import os
 import io
 import sys
+<<<<<<< HEAD
 import math
+=======
+>>>>>>> 7477a2a1d8688304bf78a855bc24290cbb8dd0bf
 import time
 import shutil
 import tempfile
@@ -37,8 +43,12 @@ if sys.platform == "win32":
 try:
     import imageio_ffmpeg
     _BUNDLED_FFMPEG = imageio_ffmpeg.get_ffmpeg_exe()
+<<<<<<< HEAD
 except Exception:
     # 未安装，或 imageio-ffmpeg 找不到可用二进制时，都不应让程序启动失败
+=======
+except ImportError:
+>>>>>>> 7477a2a1d8688304bf78a855bc24290cbb8dd0bf
     _BUNDLED_FFMPEG = None
 
 
@@ -54,11 +64,17 @@ def _get_ffmpeg() -> str | None:
 DEFAULT_TARGET_WIDTH = 600          # 默认目标宽度px
 DEFAULT_MAX_MB = 1.0                # 默认最大文件MB
 DEFAULT_OUTPUT_FORMAT = "auto"      # auto / jpeg / webp / png
-DEFAULT_SKIP_SMALL_GIF = True       # 勾选时：GIF宽度和体积都达标就跳过压缩，直接复制
+<<<<<<< HEAD
+DEFAULT_SKIP_SMALL_GIF = False       # 勾选时：GIF宽度和体积都达标就跳过压缩，直接复制
 
 MIN_TARGET_WIDTH = 10               # 宽度输入下限（防止放大到不合理）
 MAX_TARGET_WIDTH = 10000            # 宽度输入上限（防止内存爆炸）
 MAX_MAX_MB = 2048                   # 最大文件大小上限（2GB，防止误输入/溢出）
+=======
+
+MIN_TARGET_WIDTH = 10               # 宽度输入下限（防止放大到不合理）
+MAX_TARGET_WIDTH = 10000            # 宽度输入上限（防止内存爆炸）
+>>>>>>> 7477a2a1d8688304bf78a855bc24290cbb8dd0bf
 
 MAX_LOG_LINES = 2000                # 日志最大行数，防止内存无限增长
 
@@ -74,6 +90,12 @@ WEBP_QUALITY_STEP = 5
 WEBP_QUALITY_FLOOR = 70
 WEBP_QUALITY_ULTRA_FLOOR = 40       # 终极兜底，尽量压到上限以内
 
+<<<<<<< HEAD
+=======
+# GIF 质量阶梯
+GIF_COLORS_START = 256
+GIF_COLORS_MIN = 48
+>>>>>>> 7477a2a1d8688304bf78a855bc24290cbb8dd0bf
 # ================================
 
 
@@ -85,9 +107,13 @@ def _has_alpha(img: Image.Image) -> bool:
             lo, hi = alpha.getextrema()
             return lo < 255
         if img.mode in ("LA", "PA"):
+<<<<<<< HEAD
             alpha = img.getchannel("A")
             lo, hi = alpha.getextrema()
             return lo < 255
+=======
+            return True
+>>>>>>> 7477a2a1d8688304bf78a855bc24290cbb8dd0bf
         if img.mode == "P" and "transparency" in img.info:
             return True
     except Exception:
@@ -121,6 +147,7 @@ def _write_buf(buf: io.BytesIO, output_path: str) -> None:
         f.write(buf.getvalue())
 
 
+<<<<<<< HEAD
 def _gif_loop_args(loop_val) -> list:
     """把 Pillow 的 loop 值映射成 ffmpeg gif 封装器的 -loop 参数"""
     if loop_val is None:
@@ -167,6 +194,8 @@ def _run_ffmpeg(cmd: list, stop_event) -> bool:
         time.sleep(0.05)
 
 
+=======
+>>>>>>> 7477a2a1d8688304bf78a855bc24290cbb8dd0bf
 def compress_static_image(img: Image.Image, out_base: str, target_width: int,
                           max_size_bytes: int, src_ext: str,
                           output_format: str = DEFAULT_OUTPUT_FORMAT) -> tuple[int, int, int, str]:
@@ -180,6 +209,7 @@ def compress_static_image(img: Image.Image, out_base: str, target_width: int,
     返回: (原始宽, 输出宽, 输出高, 实际输出扩展名)
     """
     # 修复EXIF方向：手机竖图先按拍摄方向转正，避免输出横躺
+<<<<<<< HEAD
     # exif_transpose 会强制完整解码，只有方向正常(1)的图才值得先 draft 省内存
     orientation = 1
     try:
@@ -203,6 +233,19 @@ def compress_static_image(img: Image.Image, out_base: str, target_width: int,
     out_h = max(1, int(orig_h * out_w / orig_w))
     if (img.width, img.height) != (out_w, out_h):
         img = img.resize((out_w, out_h), Image.Resampling.LANCZOS)
+=======
+    img = ImageOps.exif_transpose(img)
+    orig_w, orig_h = img.size
+    ratio = target_width / orig_w
+    new_h = max(1, int(orig_h * ratio))
+    # 超大图：先用 draft 粗略降采样，降低内存峰值（需在首次像素解码前调用）
+    if orig_w > target_width or orig_h > new_h:
+        try:
+            img.draft(img.mode, (target_width, new_h))
+        except Exception:
+            pass
+    img = img.resize((target_width, new_h), Image.Resampling.LANCZOS)
+>>>>>>> 7477a2a1d8688304bf78a855bc24290cbb8dd0bf
     has_alpha = _has_alpha(img)
 
     # ---------- 模式：全部转 PNG ----------
@@ -218,6 +261,7 @@ def compress_static_image(img: Image.Image, out_base: str, target_width: int,
             _write_buf(buf, out_base + ".png")
             return orig_w, img.width, img.height, ".png"
         # 无损超限：降为调色板PNG（P模式）尝试
+<<<<<<< HEAD
         # 透明图用 FASTOCTREE 量化，调色板自带 alpha，保存PNG时会写入 tRNS，
         # 不会像普通 convert("P") 那样把透明区域变成黑底
         if has_alpha:
@@ -225,6 +269,9 @@ def compress_static_image(img: Image.Image, out_base: str, target_width: int,
                 colors=256, method=Image.Quantize.FASTOCTREE)
         else:
             p_img = img.convert("P", palette=Image.Quantize.MEDIANCUT, colors=256)
+=======
+        p_img = img.convert("P", palette=Image.Quantize.MEDIANCUT, colors=256)
+>>>>>>> 7477a2a1d8688304bf78a855bc24290cbb8dd0bf
         buf = io.BytesIO()
         p_img.save(buf, format="PNG", optimize=True)
         if buf.tell() <= max_size_bytes:
@@ -349,6 +396,7 @@ def compress_static_image(img: Image.Image, out_base: str, target_width: int,
 
 
 def compress_gif(img: Image.Image, output_path: str, input_path: str = None,
+<<<<<<< HEAD
                  target_width: int = 600, max_size_bytes: int = 1024 * 1024,
                  stop_event: threading.Event = None) -> tuple[int, int, int] | None:
     """
@@ -361,6 +409,18 @@ def compress_gif(img: Image.Image, output_path: str, input_path: str = None,
     # 不放大：目标宽度大于原宽时保持原宽
     target_w = min(target_width, orig_w)
     target_h = max(1, int(orig_h * target_w / orig_w))
+=======
+                 target_width: int = 600, max_size_bytes: int = 1024 * 1024) -> tuple[int, int, int]:
+    """
+    压缩GIF（质量优先）：等比缩放，在大小上限内优先保留原帧率和高颜色数
+    优先用 ffmpeg（效果更好），ffmpeg 缺失或失败时自动降级到 Pillow 兜底
+    返回: (原始宽, 输出宽, 输出高)
+    """
+    orig_w, orig_h = img.size
+    ratio = target_width / orig_w
+    new_h = max(1, int(orig_h * ratio))
+    target_w, target_h = target_width, new_h
+>>>>>>> 7477a2a1d8688304bf78a855bc24290cbb8dd0bf
 
     # ---- 方案1：用 ffmpeg 压缩（效果更好） ----
     ffmpeg_path = _get_ffmpeg()
@@ -373,11 +433,16 @@ def compress_gif(img: Image.Image, output_path: str, input_path: str = None,
                 fps_list = [None, 15, 12, 10]
                 color_list = [128, 96, 64, 48, 32, 24]
                 dither = "bayer:bayer_scale=5"   # bayer 抖动减轻色带
+<<<<<<< HEAD
                 loop_args = _gif_loop_args(img.info.get("loop"))  # 保留原图循环次数
                 for fps in fps_list:
                     for colors in color_list:
                         if stop_event is not None and stop_event.is_set():
                             return None
+=======
+                for fps in fps_list:
+                    for colors in color_list:
+>>>>>>> 7477a2a1d8688304bf78a855bc24290cbb8dd0bf
                         vf_scale = f"scale={target_w}:-1:flags=lanczos"
                         vf_palette = vf_scale
                         if fps:
@@ -387,14 +452,22 @@ def compress_gif(img: Image.Image, output_path: str, input_path: str = None,
                             ffmpeg_path, "-y", "-i", input_path,
                             "-vf", vf_palette, palette
                         ]
+<<<<<<< HEAD
                         if not _run_ffmpeg(cmd_pal, stop_event):
                             raise RuntimeError("ffmpeg 调色板生成失败或超时")
+=======
+                        subprocess.run(cmd_pal, capture_output=True, check=True,
+                                       creationflags=_CREATE_NO_WINDOW,
+                                       startupinfo=_STARTUP_INFO,
+                                       timeout=FFMPEG_TIMEOUT)
+>>>>>>> 7477a2a1d8688304bf78a855bc24290cbb8dd0bf
                         vf_use = vf_scale
                         if fps:
                             vf_use += f",fps={fps}"
                         cmd_gif = [
                             ffmpeg_path, "-y", "-i", input_path, "-i", palette,
                             "-lavfi", f"[0:v]{vf_use}[x]; [x][1:v] paletteuse=dither={dither}",
+<<<<<<< HEAD
                             *loop_args,
                             out_tmp
                         ]
@@ -403,12 +476,12 @@ def compress_gif(img: Image.Image, output_path: str, input_path: str = None,
                         if os.path.getsize(out_tmp) <= max_size_bytes:
                             shutil.copy(out_tmp, output_path)
                             return orig_w, target_w, target_h
-                shutil.copy(out_tmp, output_path)
-                return orig_w, target_w, target_h
+                # 所有组合都超限：不直接写出，交给下面的 Pillow 兜底继续压
+                raise RuntimeError("ffmpeg 无法压到目标大小")
         except Exception:
             if stop_event is not None and stop_event.is_set():
                 return None
-            pass  # ffmpeg 失败 → 降级到 Pillow 兜底
+            pass  # ffmpeg 失败或超限 → 降级到 Pillow 兜底
 
     # ---- 方案2：Pillow 兜底 ----
     # 用源 GIF 的全局调色板作为目标调色板：比 WEB 安全色更接近原色，体积也更小
@@ -442,8 +515,32 @@ def compress_gif(img: Image.Image, output_path: str, input_path: str = None,
     avg_ms = sum(durations) / len(durations)
     src_fps = 1000.0 / avg_ms if avg_ms > 0 else 10.0
 
-    def encode_gif(sub_frames, sub_durations, dither):
-        if src_palette_img is not None:
+    _palette_cache = {}
+
+    def limited_palette(colors):
+        """多帧拼图采样生成受限调色板：只用第一帧会漏掉后续帧的颜色"""
+        if colors in _palette_cache:
+            return _palette_cache[colors]
+        sample_count = 8
+        step = max(1, len(frames_rgb) // sample_count)
+        samples = frames_rgb[::step][:sample_count]
+        thumb_w = 150
+        thumb_h = max(1, int(thumb_w * target_h / target_w))
+        canvas = Image.new("RGB", (thumb_w * len(samples), thumb_h))
+        for i, frame in enumerate(samples):
+            canvas.paste(frame.resize((thumb_w, thumb_h),
+                                      Image.Resampling.LANCZOS),
+                         (i * thumb_w, 0))
+        pal = canvas.quantize(colors=colors, method=Image.Quantize.MEDIANCUT)
+        _palette_cache[colors] = pal
+        return pal
+
+    def encode_gif(sub_frames, sub_durations, dither, colors=None):
+        if colors is not None and colors < 256:
+            pal = limited_palette(colors)
+            p_frames = [f.quantize(palette=pal, dither=dither)
+                        for f in sub_frames]
+        elif src_palette_img is not None:
             p_frames = [f.quantize(palette=src_palette_img, dither=dither)
                         for f in sub_frames]
         else:
@@ -474,22 +571,30 @@ def compress_gif(img: Image.Image, output_path: str, input_path: str = None,
                 out_durations[-1] += dur
         return out_frames, out_durations
 
-    # 画质从高到低尝试。注意：抖动会明显增大体积（同一素材实测约 5 倍），
-    # 所以体积超标时优先去掉抖动；仍超标再抽帧（最低 8fps）
-    attempts = [(1, Image.Dither.FLOYDSTEINBERG), (1, Image.Dither.NONE)]
-    seen_steps = {1}
+    # 画质从高到低尝试：抖动 → 不抖动 → 减颜色 → 抽帧
+    # 抖动会明显增大体积（同一素材实测约 5 倍）；减颜色保留帧率，优先于抽帧
+    attempts = [
+        (1, Image.Dither.FLOYDSTEINBERG, None),
+        (1, Image.Dither.NONE, None),
+        (1, Image.Dither.NONE, 128),
+        (1, Image.Dither.NONE, 64),
+        (1, Image.Dither.NONE, 32),
+    ]
+    # 低帧率 GIF（例如 9fps）按 fps 换算的步长可能仍是 1，这里额外强制抽帧
+    drop_steps = {2, 3, 4}
     for fps in (15, 12, 10, 8):
         step = max(1, int(round(src_fps / fps)))
-        if step > 1 and step not in seen_steps:
-            seen_steps.add(step)
-            attempts.append((step, Image.Dither.NONE))
+        if step > 1:
+            drop_steps.add(step)
+    for step in sorted(drop_steps):
+        attempts.append((step, Image.Dither.NONE, 32))
 
     smallest = None
-    for step, dither in attempts:
+    for step, dither, colors in attempts:
         if stop_event is not None and stop_event.is_set():
             return None
         sub_frames, sub_durations = subsample(step)
-        buf = encode_gif(sub_frames, sub_durations, dither)
+        buf = encode_gif(sub_frames, sub_durations, dither, colors)
         if smallest is None or buf.tell() < smallest.tell():
             smallest = buf
         if buf.tell() <= max_size_bytes:
@@ -498,21 +603,81 @@ def compress_gif(img: Image.Image, output_path: str, input_path: str = None,
 
     # 所有方案都超限：写出体积最小的结果（process_folder 会在日志里提示超限）
     _write_buf(smallest, output_path)
+=======
+                            out_tmp
+                        ]
+                        subprocess.run(cmd_gif, capture_output=True, check=True,
+                                       creationflags=_CREATE_NO_WINDOW,
+                                       startupinfo=_STARTUP_INFO,
+                                       timeout=FFMPEG_TIMEOUT)
+                        if os.path.getsize(out_tmp) <= max_size_bytes:
+                            shutil.copy(out_tmp, output_path)
+                            return orig_w, target_w, target_h
+                shutil.copy(out_tmp, output_path)
+                return orig_w, target_w, target_h
+        except Exception:
+            pass  # ffmpeg 失败 → 降级到 Pillow 兜底
+
+    # ---- 方案2：Pillow 兜底 ----
+    frames_rgb = []
+    durations = []
+    loop_val = img.info.get("loop", 0)   # 继承原循环次数，不再强制无限循环
+    for frame in ImageSequence.Iterator(img):
+        dur = frame.info.get("duration", 100)
+        frame_resized = frame.resize((target_w, target_h), Image.Resampling.LANCZOS)
+        frames_rgb.append(frame_resized.convert("RGB"))
+        durations.append(dur)
+
+    colors = GIF_COLORS_START
+    last_buf = None
+    while colors >= GIF_COLORS_MIN:
+        # 用当前 colors 生成【统一调色板】，量化所有帧，避免帧间色彩闪烁
+        if frames_rgb:
+            first_p = frames_rgb[0].convert("P", palette=Image.Quantize.MEDIANCUT, colors=colors)
+            palette = first_p.getpalette()
+            frames = [f.convert("P", palette=palette,
+                                dither=Image.Dither.FLOYDSTEINBERG) for f in frames_rgb]
+        buf = io.BytesIO()
+        if frames:
+            frames[0].save(
+                buf,
+                format="GIF",
+                save_all=True,
+                append_images=frames[1:],
+                loop=loop_val,
+                duration=durations,
+                optimize=True,
+                colors=colors,
+            )
+        last_buf = buf
+        if buf.tell() <= max_size_bytes:
+            _write_buf(buf, output_path)
+            return orig_w, target_w, target_h
+        colors -= 32
+    _write_buf(last_buf, output_path)
+>>>>>>> 7477a2a1d8688304bf78a855bc24290cbb8dd0bf
     return orig_w, target_w, target_h
 
 
 def process_folder(input_dir: str, output_dir: str, target_width: int,
                    max_size_bytes: int, progress_cb, log_cb,
                    output_format: str = DEFAULT_OUTPUT_FORMAT,
+<<<<<<< HEAD
                    stop_event: threading.Event = None,
                    skip_small_gif: bool = DEFAULT_SKIP_SMALL_GIF) -> dict:
+=======
+                   stop_event: threading.Event = None) -> dict:
+>>>>>>> 7477a2a1d8688304bf78a855bc24290cbb8dd0bf
     """
     批量处理文件夹
     progress_cb(done, total, filename)
     log_cb(msg)
     stop_event：置位时提前终止处理
+<<<<<<< HEAD
     skip_small_gif：为 True 时，GIF 宽度 ≤ target_width 且体积 ≤ max_size_bytes
                     就直接复制；为 False 时所有 GIF 都重新压缩
+=======
+>>>>>>> 7477a2a1d8688304bf78a855bc24290cbb8dd0bf
     返回统计: {"success": n, "copy": n, "fail": n, "stopped": bool}
     """
     os.makedirs(output_dir, exist_ok=True)
@@ -524,6 +689,7 @@ def process_folder(input_dir: str, output_dir: str, target_width: int,
         if ext in exts_static or ext in exts_gif:
             files.append(fname)
 
+<<<<<<< HEAD
     # 同名不同扩展（如 a.png / a.jpg）会映射到同一个输出名而互相覆盖，
     # 这类文件在输出名里带上原扩展名区分：a_compressed_png.png / a_compressed_jpg.jpg
     base_counts = {}
@@ -531,6 +697,8 @@ def process_folder(input_dir: str, output_dir: str, target_width: int,
         base = os.path.splitext(fname)[0].lower()
         base_counts[base] = base_counts.get(base, 0) + 1
 
+=======
+>>>>>>> 7477a2a1d8688304bf78a855bc24290cbb8dd0bf
     total = len(files)
     stats = {"success": 0, "copy": 0, "fail": 0, "stopped": False}
     fmt_name = {"auto": "自动(智能保留)", "jpeg": "全部JPEG", "webp": "全部WebP", "png": "全部PNG"}
@@ -546,10 +714,14 @@ def process_folder(input_dir: str, output_dir: str, target_width: int,
         ext = os.path.splitext(fname)[1].lower()
         in_path = os.path.join(input_dir, fname)
         base = os.path.splitext(fname)[0]
+<<<<<<< HEAD
         if base_counts.get(base.lower(), 0) > 1:
             out_base = os.path.join(output_dir, f"{base}_compressed_{ext.lstrip('.')}")
         else:
             out_base = os.path.join(output_dir, f"{base}_compressed")
+=======
+        out_base = os.path.join(output_dir, f"{base}_compressed")
+>>>>>>> 7477a2a1d8688304bf78a855bc24290cbb8dd0bf
 
         progress_cb(i, total, fname)
         log_cb(f"处理中: {fname}")
@@ -559,11 +731,16 @@ def process_folder(input_dir: str, output_dir: str, target_width: int,
             with Image.open(in_path) as img:
                 orig_w, orig_h = img.size
 
+<<<<<<< HEAD
                 # 静图：宽度已达标且未超限 → 直接复制原图，零损耗
                 # 强制 JPEG/WebP/PNG 时不走复制，保证输出格式统一
                 # GIF 统一交给下面的“GIF跳压缩”开关决定，不在通用规则里复制
                 can_copy = orig_w <= target_width and file_size <= max_size_bytes
                 if can_copy and output_format == "auto" and ext not in exts_gif:
+=======
+                # 宽度已达标且未超限 → 直接复制原图，零损耗
+                if orig_w <= target_width and file_size <= max_size_bytes:
+>>>>>>> 7477a2a1d8688304bf78a855bc24290cbb8dd0bf
                     out_path = out_base + ext
                     shutil.copy2(in_path, out_path)
                     stats["copy"] += 1
@@ -571,6 +748,7 @@ def process_folder(input_dir: str, output_dir: str, target_width: int,
                            f"文件{file_size / 1024:.0f}KB ≤{max_size_bytes / 1024:.0f}KB")
                     continue
 
+<<<<<<< HEAD
                 # GIF：开关勾选且宽度、体积都达标 → 跳过压缩，直接复制
                 if (ext in exts_gif and skip_small_gif
                         and orig_w <= target_width
@@ -602,11 +780,21 @@ def process_folder(input_dir: str, output_dir: str, target_width: int,
                     n_frames = getattr(img, "n_frames", 1)
                     if n_frames > 1:
                         log_cb(f"  ⚠ {fname} 是多帧图片（{n_frames} 帧），当前只处理第一帧")
+=======
+                # 需要压缩
+                if ext in exts_gif:
+                    out_path = out_base + ".gif"
+                    ow, nw, nh = compress_gif(img, out_path, input_path=in_path,
+                                              target_width=target_width,
+                                              max_size_bytes=max_size_bytes)
+                else:
+>>>>>>> 7477a2a1d8688304bf78a855bc24290cbb8dd0bf
                     ow, nw, nh, out_ext = compress_static_image(
                         img, out_base, target_width, max_size_bytes, ext, output_format)
                     out_path = out_base + out_ext
             # with 结束，img 已关闭
             stats["success"] += 1
+<<<<<<< HEAD
             out_size = os.path.getsize(out_path)
             size_kb = out_size / 1024
             out_fmt = os.path.splitext(out_path)[1]
@@ -624,6 +812,15 @@ def process_folder(input_dir: str, output_dir: str, target_width: int,
         progress_cb(min(i + 1, total) if files else 0, total, "已停止")
     else:
         progress_cb(total, total, "完成")
+=======
+            size_kb = os.path.getsize(out_path) / 1024
+            out_fmt = os.path.splitext(out_path)[1]
+            log_cb(f"  ✓ {fname}  {ow}px → {nw}×{nh} → {out_fmt}  ({size_kb:.0f}KB)")
+        except Exception as e:
+            stats["fail"] += 1
+            log_cb(f"  ✗ {fname}  失败: {e}")
+    progress_cb(total, total, "完成")
+>>>>>>> 7477a2a1d8688304bf78a855bc24290cbb8dd0bf
     return stats
 
 
@@ -632,14 +829,21 @@ class App(tk.Tk):
     def __init__(self):
         super().__init__()
         self.title("批量图片/GIF压缩工具（智能保留版）")
+<<<<<<< HEAD
         self.geometry("680x660")
+=======
+        self.geometry("680x560")
+>>>>>>> 7477a2a1d8688304bf78a855bc24290cbb8dd0bf
         self.resizable(False, False)
         self.input_dir = tk.StringVar()
         self.output_dir = tk.StringVar()
         self.target_width_var = tk.StringVar(value=str(DEFAULT_TARGET_WIDTH))
         self.max_mb_var = tk.StringVar(value=str(DEFAULT_MAX_MB))
         self.output_format_var = tk.StringVar(value=DEFAULT_OUTPUT_FORMAT)
+<<<<<<< HEAD
         self.skip_small_gif_var = tk.BooleanVar(value=DEFAULT_SKIP_SMALL_GIF)
+=======
+>>>>>>> 7477a2a1d8688304bf78a855bc24290cbb8dd0bf
         self.running = False
         self._stop_event = threading.Event()
         self._last_progress_t = 0.0   # 进度节流时间戳
@@ -702,6 +906,7 @@ class App(tk.Tk):
         cb.pack(side="left", padx=5)
         ttk.Label(row, text="auto=智能保留 · 仅作用于静图").pack(side="left", padx=10)
 
+<<<<<<< HEAD
         # GIF：宽度和体积都达标时跳过压缩（由开关控制）
         row = ttk.Frame(tab_main)
         row.pack(fill="x", **pad)
@@ -712,6 +917,8 @@ class App(tk.Tk):
             variable=self.skip_small_gif_var,
         ).pack(side="left", padx=5)
 
+=======
+>>>>>>> 7477a2a1d8688304bf78a855bc24290cbb8dd0bf
         # 参数说明
         row = ttk.LabelFrame(tab_main, text="处理规则")
         row.pack(fill="x", **pad)
@@ -719,7 +926,10 @@ class App(tk.Tk):
             f"• 图片按设置宽度缩放，高度等比例\n"
             f"• 输出文件不超过设置的最大文件大小\n"
             f"• 宽度≤目标宽度且未超限：直接复制原图\n"
+<<<<<<< HEAD
             f"• 勾选GIF跳压缩：GIF宽度≤目标且体积≤上限就复制；取消勾选则全部压缩\n"
+=======
+>>>>>>> 7477a2a1d8688304bf78a855bc24290cbb8dd0bf
             f"• auto：PNG/WebP 无损优先，透明图保留透明；无损不达标再转JPEG/WebP\n"
             f"• 强制JPEG：透明图垫白底；强制PNG：超限降为调色板PNG\n"
             f"• GIF动画不受格式偏好影响，始终保持GIF\n"
@@ -758,7 +968,10 @@ class App(tk.Tk):
 
 智能格式策略：
 • 宽度已达标且未超限 → 复制原图，零损耗
+<<<<<<< HEAD
 • 勾选“GIF跳压缩” → GIF宽度和体积都达标就复制；取消勾选则全部压缩
+=======
+>>>>>>> 7477a2a1d8688304bf78a855bc24290cbb8dd0bf
 • PNG/WebP → 先尝试无损保留原格式，质量100%
 • 无损无法达标 → 转 JPEG（兼容最好），仍超限再转 WebP
 • 透明图 → 先试无损PNG，否则 WebP（保留透明）
@@ -828,6 +1041,7 @@ Pillow、imageio‑ffmpeg
         if not out:
             messagebox.showwarning("提示", "请选择输出文件夹")
             return
+<<<<<<< HEAD
         # 修复：输入与输出相同会覆盖/累积文件，直接拒绝（Windows 下大小写不敏感）
         try:
             same_dir = os.path.samefile(inp, out)
@@ -835,6 +1049,10 @@ Pillow、imageio‑ffmpeg
             same_dir = (os.path.normcase(os.path.abspath(out))
                         == os.path.normcase(os.path.abspath(inp)))
         if same_dir:
+=======
+        # 修复：输入与输出相同会覆盖/累积文件，直接拒绝
+        if os.path.abspath(out) == os.path.abspath(inp):
+>>>>>>> 7477a2a1d8688304bf78a855bc24290cbb8dd0bf
             messagebox.showwarning("提示", "输出文件夹不能与输入文件夹相同，"
                                            "否则会覆盖原图或无限累积 _compressed 文件。")
             return
@@ -849,6 +1067,7 @@ Pillow、imageio‑ffmpeg
                 f"目标宽度需在 {MIN_TARGET_WIDTH}~{MAX_TARGET_WIDTH}px 之间，使用默认 {DEFAULT_TARGET_WIDTH} px")
             tw = DEFAULT_TARGET_WIDTH
             self.target_width_var.set(str(DEFAULT_TARGET_WIDTH))
+<<<<<<< HEAD
         # 校验最大MB（nan/inf 也必须拒绝，否则 int() 会抛异常）
         try:
             max_mb = float(self.max_mb_var.get().strip())
@@ -858,6 +1077,15 @@ Pillow、imageio‑ffmpeg
             messagebox.showwarning(
                 "参数错误",
                 f"最大文件大小需在 0.01~{MAX_MAX_MB} MB 之间，使用默认 {DEFAULT_MAX_MB} MB")
+=======
+        # 校验最大MB
+        try:
+            max_mb = float(self.max_mb_var.get().strip())
+            if max_mb <= 0.01:
+                raise ValueError()
+        except ValueError:
+            messagebox.showwarning("参数错误", f"最大文件大小输入无效，使用默认 {DEFAULT_MAX_MB} MB")
+>>>>>>> 7477a2a1d8688304bf78a855bc24290cbb8dd0bf
             max_mb = DEFAULT_MAX_MB
             self.max_mb_var.set(str(DEFAULT_MAX_MB))
         max_size_bytes = int(max_mb * 1024 * 1024)
@@ -867,8 +1095,11 @@ Pillow、imageio‑ffmpeg
             fmt = DEFAULT_OUTPUT_FORMAT
             self.output_format_var.set(DEFAULT_OUTPUT_FORMAT)
 
+<<<<<<< HEAD
         skip_small_gif = bool(self.skip_small_gif_var.get())
 
+=======
+>>>>>>> 7477a2a1d8688304bf78a855bc24290cbb8dd0bf
         self.running = True
         self._stop_event.clear()
         self.btn_start.configure(state="disabled")
@@ -877,8 +1108,12 @@ Pillow、imageio‑ffmpeg
         self.log_text.delete("1.0", "end")
         self.log_text.configure(state="disabled")
         t = threading.Thread(target=self._worker,
+<<<<<<< HEAD
                              args=(inp, out, tw, max_size_bytes, fmt, skip_small_gif),
                              daemon=True)
+=======
+                             args=(inp, out, tw, max_size_bytes, fmt), daemon=True)
+>>>>>>> 7477a2a1d8688304bf78a855bc24290cbb8dd0bf
         t.start()
 
     def _stop(self):
@@ -887,6 +1122,7 @@ Pillow、imageio‑ffmpeg
         self._log("⏹ 用户请求停止，正在退出…")
 
     def _worker(self, inp: str, out: str, target_width: int,
+<<<<<<< HEAD
                 max_size_bytes: int, output_format: str = DEFAULT_OUTPUT_FORMAT,
                 skip_small_gif: bool = False):
         try:
@@ -906,6 +1142,16 @@ Pillow、imageio‑ffmpeg
         self.btn_stop.configure(state="disabled")
         self.status_var.set("出错")
         messagebox.showerror("错误", f"处理失败：\n{message}")
+=======
+                max_size_bytes: int, output_format: str = DEFAULT_OUTPUT_FORMAT):
+        try:
+            stats = process_folder(inp, out, target_width, max_size_bytes,
+                                   self._progress, self._log, output_format,
+                                   self._stop_event)
+            self.after(0, lambda: self._done(stats))
+        except Exception as e:
+            self.after(0, lambda: messagebox.showerror("错误", str(e)))
+>>>>>>> 7477a2a1d8688304bf78a855bc24290cbb8dd0bf
 
     def _done(self, stats: dict):
         self.running = False

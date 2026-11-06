@@ -1,2 +1,21 @@
-# auto_photo_handle
-Automatically process images; 1. Common types of static and dynamic images 2. Compress image size and pixel resolution
+# 自动化处理图片
+
+#### 介绍
+自动化处理图片;
+1.常见的静态图片类型和动态图片类型
+2.压缩图片大小以及图片像素
+
+
+
+#### 安装教程
+
+1.  pip install Pillow
+
+
+#### 使用说明
+
+1.  需安装Pillow
+2.  压缩gif建议加装ffmpeg
+
+
+
